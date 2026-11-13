@@ -1,0 +1,25 @@
+:root{
+  --fab-primary:#2C01FF;
+  --fab-primary-fg:#ffffff;
+  --fab-accent:#69FF01;
+  --fab-primary-text:#2C01FF;
+  --fab-bg:#faf8fd;
+  --fab-card:#ffffff;
+  --fab-text:#16121e;
+  --fab-destructive:#dc2626;
+  --fab-radius:16px;
+  --fab-font:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --fab-font-title:'Inter', ui-sans-serif, system-ui, sans-serif;
+  --fab-title-tracking:-0.02em;
+  --fab-muted:#635f6a;
+}
+.dark{
+  --fab-primary:#684cf0;
+  --fab-primary-fg:#ffffff;
+  --fab-primary-text:#8976ff;
+  --fab-bg:#14101c;
+  --fab-card:#1e1830;
+  --fab-text:#f3eefb;
+  --fab-destructive:#f87171;
+  --fab-muted:#908c99;
+}

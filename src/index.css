@@ -1,0 +1,246 @@
+/* The Brand's theme (--fab-primary/--fab-font/…), written per app by services/lib/materialize.mjs. It carries VALUES
+   only: the font FILES are requested from index.html by a <link rel="stylesheet"> the same materialization injects.
+   ⚠️ Do NOT bring back an `@import url(https://fonts.googleapis.com/…)` here or there. It is render-blocking (it is
+   only discovered after this stylesheet is downloaded and parsed) and it measured FCP 3.5 s on every one of the 5
+   apps sampled with Lighthouse mobile on 2026-09-07 — and, because the bundler keeps only the FIRST remote @import,
+   a second one anywhere in the bundle vanished silently. */
+@import "./fab-theme.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+/* The app's typographic identity (headings + the type scale). AFTER tailwindcss so its `@layer base` merges into the
+   layer tailwind already declared. It is APP CODE in app-owned mode — see APP_OWNED_STYLES in materialize.mjs. */
+@import "./app-typography.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Tokens do design system (design Fabapp). A cor primária, o raio, o fundo e a fonte ligam-se às vars da
+   PLATAFORMA (--fab-*, injetadas a partir do tema da Marca) com fallback = design Fabapp (roxo #742fc2). */
+/* CLARO: cada token liga-se a --fab-* (do preset/Marca) com fallback = design Fabapp. Os NEUTROS (borda, texto
+   secundário, superfícies) DERIVAM do texto+fundo via color-mix → adaptam a QUALQUER preset sem configuração. */
+:root {
+  --radius: var(--fab-radius, 0.6875rem);   /* 11px → controles (md) caem em 9px; cards (xl) em 15px */
+  --background: var(--fab-bg, #ffffff);
+  --foreground: var(--fab-text, #16121e);
+  --card: var(--fab-card, var(--fab-bg, #ffffff));
+  --card-foreground: var(--fab-text, #16121e);
+  --popover: var(--fab-card, var(--fab-bg, #ffffff));
+  --popover-foreground: var(--fab-text, #16121e);
+  --primary: var(--fab-primary, #742fc2);
+  --primary-foreground: var(--fab-primary-fg, #ffffff);
+  --accent: var(--fab-accent, color-mix(in oklab, var(--fab-primary, #742fc2) 12%, var(--fab-bg, #ffffff)));
+  /* A MARCA COMO TEXTO. `--primary` é a cor de PREENCHIMENTO: num botão ela vem com `--primary-foreground` por cima
+     e passa em qualquer tom. Como TEXTO pequeno ela falhava no AA em 7 dos 12 presets no modo claro (verde-lima em
+     2.99:1 sobre o fundo) e em 10 das 24 combinações sobre o accent — que é onde `hover:text-accent-foreground` de
+     todo botão ghost/outline aterrissa. Escurecer `--primary` consertaria os dois e mudaria a marca; este token
+     carrega a variante legível ao lado dela, derivado em `theme/presets.py::_side` contra a superfície mais apertada.
+     O fallback é a própria cor do design Fabapp, que já lê 6.80:1 — sem tema injetado, nada muda. */
+  --primary-text: var(--fab-primary-text, var(--fab-primary, #742fc2));
+  --accent-foreground: var(--primary-text);
+  --destructive: var(--fab-destructive, #c0392b);
+  --border: var(--fab-border, color-mix(in oklab, var(--fab-text, #16121e) 9%, var(--fab-bg, #ffffff)));
+  --input: var(--border);
+  --ring: var(--fab-primary, #742fc2);
+  /* 52% → 62%: at 52% this token composited to 4.29:1 on the page background, BELOW the WCAG AA 4.5:1 for body text,
+     and axe reported it `serious` on the real build. It is the app's secondary-text token, so the defect shipped on
+     every screen of every app. 62% measures 6.06:1, and 5.03:1 on the tightest tinted surface the kit puts it on
+     (--accent). It DOES darken the secondary text of every published app on its next rebuild — a visible change,
+     accepted as the price of the text being readable. */
+  --muted-foreground: var(--fab-muted, color-mix(in oklab, var(--fab-text, #16121e) 62%, var(--fab-bg, #ffffff)));
+  --secondary: color-mix(in oklab, var(--fab-text, #16121e) 6%, var(--fab-bg, #ffffff));
+  --secondary-foreground: var(--fab-text, #16121e);
+  --muted: color-mix(in oklab, var(--fab-text, #16121e) 4%, var(--fab-bg, #ffffff));
+  --success: var(--fab-success, #0e9f6e);
+  --warning: var(--fab-warning, #e0a92b);
+  --info: var(--fab-info, #2a6fdb);
+}
+
+/* ESCURO: MESMOS tokens ligados a --fab-* (o preset injeta os valores escuros em `.dark` via fab-theme.css); sem
+   preset, caem nos defaults escuros Fabapp → o modo escuro funciona por padrão. */
+.dark {
+  --background: var(--fab-bg, #0f0f12);
+  --foreground: var(--fab-text, #f4f4f5);
+  --card: var(--fab-card, #1a1a1f);
+  --card-foreground: var(--fab-text, #f4f4f5);
+  --popover: var(--fab-card, #1a1a1f);
+  --popover-foreground: var(--fab-text, #f4f4f5);
+  --primary: var(--fab-primary, #a377e6);
+  --primary-foreground: var(--fab-primary-fg, #14101c);
+  --accent: var(--fab-accent, color-mix(in oklab, var(--fab-primary, #a377e6) 22%, var(--fab-bg, #0f0f12)));
+  /* A MARCA COMO TEXTO. `--primary` é a cor de PREENCHIMENTO: num botão ela vem com `--primary-foreground` por cima
+     e passa em qualquer tom. Como TEXTO pequeno ela falhava no AA em 7 dos 12 presets no modo claro (verde-lima em
+     2.99:1 sobre o fundo) e em 10 das 24 combinações sobre o accent — que é onde `hover:text-accent-foreground` de
+     todo botão ghost/outline aterrissa. Escurecer `--primary` consertaria os dois e mudaria a marca; este token
+     carrega a variante legível ao lado dela, derivado em `theme/presets.py::_side` contra a superfície mais apertada.
+     O fallback é a própria cor do design Fabapp, que já lê 6.80:1 — sem tema injetado, nada muda. */
+  --primary-text: var(--fab-primary-text, var(--fab-primary, #a377e6));
+  --accent-foreground: var(--primary-text);
+  --destructive: var(--fab-destructive, #f87171);
+  --border: var(--fab-border, color-mix(in oklab, var(--fab-text, #f4f4f5) 14%, var(--fab-bg, #0f0f12)));
+  --input: var(--border);
+  --ring: var(--fab-primary, #a377e6);
+  /* 42% → 60%: the dark side was worse (2.94:1 on --card), and --card is NOT the surface to measure against. The
+     kit puts secondary text on the tinted surfaces too — `--muted`, `--secondary`, `--accent` and `hover:bg-accent/50`
+     over a card (phone-input, fab-charts, fab-booking, fab-qr, fab-availability, image-upload, file-upload) — and in
+     dark mode every one of those is LIGHTER than --card, so each is tighter than the surface the first fix aimed at.
+     At 55% the token cleared --card (4.52:1) and still failed all four (3.87–4.44:1). 60% clears the whole set, with
+     --accent as the worst at 4.54:1, and stays 2.97:1 away from --foreground, so it still reads as secondary. */
+  --muted-foreground: var(--fab-muted, color-mix(in oklab, var(--fab-text, #f4f4f5) 60%, var(--fab-bg, #0f0f12)));
+  --secondary: color-mix(in oklab, var(--fab-text, #f4f4f5) 10%, var(--fab-bg, #0f0f12));
+  --secondary-foreground: var(--fab-text, #f4f4f5);
+  --muted: color-mix(in oklab, var(--fab-text, #f4f4f5) 7%, var(--fab-bg, #0f0f12));
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #60a5fa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--fab-font, "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif);
+  /* fonte de TÍTULOS (Marca) — headings; default = Space Grotesk do design Fabapp */
+  --font-display: var(--fab-font-title, "Space Grotesk", ui-sans-serif, system-ui, sans-serif);
+  /* `font-serif` is the theme's TITLE face too. The model writes `font-serif` on a heading when it wants the brand's
+     display voice; Tailwind's own value is ui-serif/Georgia/Times, which is how a store's hero shipped in Times New
+     Roman while its theme said Cormorant (2026-10-10). */
+  --font-serif: var(--fab-font-title, "Space Grotesk", ui-sans-serif, system-ui, sans-serif);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
+  /* The headings moved to ./app-typography.css — that file is the app's typographic IDENTITY (family, tracking,
+     scale) and is EDITABLE app code in app-owned mode; this file is the design-system wiring and stays platform. */
+  /* CURSOR DOS BOTÕES — regressão do Tailwind v4: o preflight da v3 aplicava `cursor: pointer` em `button` e a v4
+   * deixou de aplicar (segue o default do navegador). Sem esta regra TODO botão de TODO app gerado deixa de
+   * indicar que é clicável — o defeito nasce no template, então sai multiplicado por app, e o apper não tem como
+   * corrigir na origem. Vale mais aqui do que em qualquer tela: é o reset global que quebrou. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* ── The ROUTE-SPLITTING fallback ────────────────────────────────────────────────────────────────────────────────
+ * The skeleton shown while a lazily loaded page chunk arrives. It lives HERE, as authored CSS, and not as Tailwind
+ * utilities in the injected JSX: the route-splitting transform runs inside Vite (see ./lazy-routes.ts), and
+ * Tailwind v4 builds its utilities by scanning the SOURCE FILES on disk — a class that exists only in a
+ * transform's output is never generated, and the fallback would render unstyled (a blank white flash, which is the
+ * very thing the fallback exists to prevent). Authored CSS has no such dependency. */
+@layer components {
+  .fab-route-fallback {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+    min-height: 60vh;
+    background-color: var(--color-background);
+  }
+  .fab-route-fallback > i {
+    display: block;
+    border-radius: var(--radius-md);
+    background-color: var(--color-muted);
+    animation: fab-route-pulse 1.6s ease-in-out infinite;
+  }
+  .fab-route-fallback > i:nth-child(1) { height: 2rem; width: 40%; }
+  .fab-route-fallback > i:nth-child(2) { height: 12rem; width: 100%; }
+  .fab-route-fallback > i:nth-child(3) { height: 1rem; width: 85%; }
+  .fab-route-fallback > i:nth-child(4) { height: 1rem; width: 60%; }
+}
+@keyframes fab-route-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .fab-route-fallback > i { animation: none; }
+}
+
+/* ── THE BRAND AS TEXT, ENFORCED (not taught) ────────────────────────────────────────────────────────────────────
+ * `--primary-text` already existed, derived with a guaranteed AA floor in materialize.mjs, and the SYSTEM prompt
+ * already taught `text-primary-text`. Production says teaching was not enough: over the 7 days to 2026-09-08,
+ * `color-contrast` was 475 of the 856 axe findings that name a rule — the single largest defect the generator
+ * produces — its repair succeeded 10% of the time, and the guilty node was `class="… text-primary"` over and over.
+ * A token the model has to remember to use is a token that does not get used. So the utility itself resolves to the
+ * safe one.
+ *
+ * ⚠️ INSIDE `@layer utilities`, NOT unlayered, and that is the whole correctness of this rule. A layered rule loses
+ * to ANY unlayered one regardless of specificity, so writing this outside the layer would also beat
+ * `.hover\:text-white:hover` and freeze every hover that changes the text colour. Inside the layer the ordinary
+ * cascade applies: later than the generated `.text-primary` at equal specificity, so it wins; lower specificity than
+ * any variant carrying a pseudo-class, so those still win.
+ *
+ * It is a NO-OP for a brand that already reads: materialize only emits `--fab-primary-text` when the brand fails AA
+ * on the app's own surfaces, and `--primary-text` falls back to `--fab-primary` otherwise. `bg-primary`,
+ * `border-primary` and `--primary` itself are untouched — the FILL stays exactly the brand colour, which is the
+ * distinction `--primary-text` was created to make. */
+@layer utilities {
+  .text-primary { color: var(--primary-text); }
+}
+
+/* ── A ROW THAT SCROLLS SIDEWAYS WITHOUT A BAR ─────────────────────────────────────────────────────────────────────
+ * Tailwind 4 ships no utility for this, so every model writes one from memory: Lovable apps define `.scrollbar-hide`
+ * in their own index.css (167 public repos), and our generator wrote `scrollbar-none` on a merchant nav that then
+ * painted a native bar anyway, because the class resolved to nothing. Both spellings are provided so the guess the
+ * model already makes is the class that works. `scrollbar-width` covers Firefox and Chromium 121+; the pseudo-element
+ * covers Safari. It hides the BAR only: the row still scrolls by touch, trackpad, shift+wheel and keyboard, and the
+ * affordance (fade + arrows) is `<ScrollRow>`'s job, not this utility's. */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+@utility scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* LAYERED NAVIGATION (`<Screen>` and `useLayerNav` in components/ui/screen.tsx): a screen pushed over another slides
+   in from the right and slides back out on return, the way a native stack moves. `screen.tsx` tags the direction on
+   <html data-fab-nav> for the length of the View Transition. Phones only (the desktop keeps its chrome), never under
+   reduced motion, and a browser without the API simply swaps screens. */
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  html[data-fab-nav="push"]::view-transition-old(root) { animation: 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both fab-layer-under; }
+  html[data-fab-nav="push"]::view-transition-new(root) { animation: 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both fab-layer-in; }
+  html[data-fab-nav="pop"]::view-transition-old(root) { animation: 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both fab-layer-out; z-index: 2; }
+  html[data-fab-nav="pop"]::view-transition-new(root) { animation: 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both fab-layer-from-under; }
+}
+@keyframes fab-layer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes fab-layer-under { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-24%); opacity: 0.7; } }
+@keyframes fab-layer-out { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes fab-layer-from-under { from { transform: translateX(-24%); opacity: 0.7; } to { transform: translateX(0); opacity: 1; } }
+
+/* The same for an app whose OWN copy of the shell (app-owned code, seeded before 2026-10-14) knows no `tabs="roots"`:
+   while a <Screen> is mounted it tags <html data-fab-layer>, and the legacy bars (no `data-fab-shell`) give way. A
+   current shell carries `data-fab-shell` and decides by itself. */
+@media (max-width: 767px) {
+  html[data-fab-layer] nav[aria-label="Main"].fixed:not([data-fab-shell]) { display: none; }
+  html[data-fab-layer] header.sticky.top-0:not([data-fab-shell]) { display: none; }
+  html[data-fab-layer] main:not([data-fab-shell]) { padding-bottom: env(safe-area-inset-bottom); }
+}

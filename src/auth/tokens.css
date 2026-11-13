@@ -1,0 +1,14 @@
+/* The app's own shape decisions, applied to the sign-in screens so they look like the rest of the app.
+   The platform MEASURES them from the app's screens at the first build (the radius its buttons, fields and cards
+   actually use, the shadow on its primary buttons, the weight of its titles) and writes them here. Colour, fonts,
+   the base radius and dark mode already come from the theme; these are the decisions the theme does not hold.
+   Edit them here to change the sign-in screens' shape without touching any screen. */
+.auth {
+  /*@fab:design-tokens*/
+  --auth-radius-button: calc(var(--radius) - 2px);
+  --auth-radius-control: calc(var(--radius) - 2px);
+  --auth-radius-card: 1rem;
+  --auth-button-shadow: 0 0 #0000;
+  --auth-title-weight: 600;
+  /*@fab:end*/
+}

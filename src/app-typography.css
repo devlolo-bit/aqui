@@ -1,0 +1,32 @@
+/* APP TYPOGRAPHY — the app's typographic IDENTITY.
+ *
+ * This file is APP CODE in `app-owned` mode (the default): `services/lib/materialize.mjs::APP_OWNED_STYLES` takes it
+ * out of PLATFORM_OWNED, so an `src/app-typography.css` in App.code overrides this one. That is the point — it is the
+ * file that answers "deixe os títulos mais condensados" / "quero as headings em caixa alta", which until now could
+ * only be attempted by editing `src/index.css` (refused) or by fighting the utilities on every page.
+ *
+ * `src/index.css` deliberately does NOT come with it: there live `@import "tailwindcss"`, the `@theme inline` token
+ * contract and the palette derivations that EVERY `src/components/ui/*` component reads. Breaking a rule here makes
+ * the app ugly; breaking a line there unstyles the whole app.
+ *
+ * `@layer base` is NOT optional and NOT the author's responsibility: an unlayered rule beats every layered one, so a
+ * heading rule written outside a layer silently kills `text-*`/`font-*`/`tracking-*` on every heading of the app.
+ * `materialize.mjs` WRAPS whatever App.code provides here (`enforceBaseLayer`), so the invariant holds even for a
+ * file written by someone who never read this comment.
+ *
+ * The values come from the theme (`app.config.theme` → `src/fab-theme.css`, written per build by materialize from the
+ * chosen TYPESET): `--fab-font-title` and `--fab-title-tracking`. Both fall back, so the file still renders correctly
+ * with an empty theme.
+ *
+ * KEPT DELIBERATELY MINIMAL — it is byte-for-byte the behaviour `index.css` had, plus the tracking token. An earlier
+ * draft also shipped a type scale (h1..h6 sizes + weight 700 + line-height + text-wrap). It was dropped: `@layer
+ * base` sits before `utilities`, so a heading carrying `text-3xl` was safe — but a BARE `<h1>` was not, and every
+ * already published app would have changed appearance on its next rebuild for a gain nobody asked for. Providing the
+ * seam is this file's job; the app (or the AI, on request) adds a scale here. */
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: var(--fab-title-tracking, normal);
+  }
+}

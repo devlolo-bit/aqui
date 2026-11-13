@@ -1,0 +1,75 @@
+{
+  "plugins": [
+    {
+      "package": "@tailwindcss/typography",
+      "version": "0.5.20",
+      "kind": "tailwind",
+      "directive": "@plugin \"@tailwindcss/typography\";",
+      "purpose": "Readable long-form text: articles, blog posts, terms, FAQ answers, rendered markdown.",
+      "usage": "<article className=\"prose dark:prose-invert max-w-none\">…</article>"
+    },
+    {
+      "package": "tailwind-scrollbar",
+      "version": "4.0.2",
+      "kind": "tailwind",
+      "directive": "@plugin \"tailwind-scrollbar\" { nocompatible: true; }",
+      "purpose": "Styled or hidden scrollbars for sidebars, chat panes, dashboards and horizontal carousels.",
+      "usage": "className=\"overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent\" · hide it with scrollbar-none"
+    },
+    {
+      "package": "tailwindcss-safe-area",
+      "version": "1.3.0",
+      "kind": "tailwind",
+      "directive": "@import \"tailwindcss-safe-area\";",
+      "purpose": "Spacing that respects the notch and the home indicator, for the installed PWA and the store apps.",
+      "usage": "className=\"pb-safe\" on a bottom bar · pt-safe on a fixed header · h-screen-safe"
+    },
+    {
+      "package": "tailwindcss-motion",
+      "version": "1.1.1",
+      "kind": "tailwind",
+      "directive": "@plugin \"tailwindcss-motion\";",
+      "purpose": "Entrance and loop animations from presets, for landing pages.",
+      "usage": "className=\"motion-preset-fade motion-duration-700\" · motion-preset-slide-up · motion-delay-200"
+    },
+    {
+      "package": "vite-plugin-svgr",
+      "version": "5.2.0",
+      "kind": "vite",
+      "purpose": "An .svg file imported as a React component, so it can be recoloured and sized with classes.",
+      "usage": "import Logo from \"./logo.svg?react\"; <Logo className=\"h-8 w-8 text-primary\" /> (a plain `./logo.svg` import stays a URL)"
+    },
+    {
+      "package": "vite-plugin-node-polyfills",
+      "version": "0.28.0",
+      "kind": "vite",
+      "purpose": "Browser stand-ins for Buffer, process, global and the node: built-ins, for npm libraries written for Node that fail with \"Buffer is not defined\".",
+      "usage": "Nothing to write in the app: declare it and the library that needed it starts working."
+    },
+    {
+      "package": "@mdx-js/rollup",
+      "version": "3.1.1",
+      "kind": "vite",
+      "with": {
+        "remark-gfm": "4.0.1"
+      },
+      "purpose": "Pages written in MDX (Markdown with components), with GitHub tables and task lists, for blogs and docs kept in the code.",
+      "usage": "import Post from \"./posts/hello.mdx\"; <article className=\"prose\"><Post /></article>"
+    },
+    {
+      "package": "vite-plugin-wasm",
+      "version": "3.6.0",
+      "kind": "vite",
+      "purpose": "npm libraries that ship WebAssembly as an ES module (physics engines, codecs, parsers).",
+      "usage": "Import the library as its README says; top-level await works, since the build targets es2022 when this is on.",
+      "buildTarget": "es2022"
+    },
+    {
+      "package": "vite-plugin-glsl",
+      "version": "1.6.1",
+      "kind": "vite",
+      "purpose": "GLSL shader files imported as strings, for three.js / react-three-fiber effects.",
+      "usage": "import fragment from \"./shaders/wave.frag\"; (also .vert and .glsl)"
+    }
+  ]
+}

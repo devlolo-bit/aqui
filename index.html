@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover: sem ele `env(safe-area-inset-*)` vale ZERO, e a barra de abas que o app gera com
+         `pb-[env(safe-area-inset-bottom)]` fica por baixo do indicador de home do iPhone (e do WebView da casca
+         nativa, que ocupa a tela inteira). É a linha que faz o recorte da tela existir para o CSS. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- FONTS: preconnect + a NON-BLOCKING stylesheet (preload as=style, flipped to rel=stylesheet on load, with a
+         <noscript> copy). Never a CSS `@import` (only discovered after the app's stylesheet is parsed) and never a
+         plain third-party `rel=stylesheet` (render-blocking: 840 ms wasted, FCP 3.2 s → 3.8 s on Lighthouse mobile).
+         The block between the markers is rewritten per app by services/lib/materialize.mjs; this is the default pair. -->
+    <!-- PWA / Web Push: manifest instalável + ícone (o push no iOS exige instalar o app na tela inicial). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <meta name="theme-color" content="#2C01FF" />
+    <!-- title/description: rewritten per app by the materialization (and again by the SEO step when the owner
+         configures it). "Fabapp" is the factory placeholder that used to reach 89% of published apps. -->
+    <title>App</title>
+    <!--fab-fonts--><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" /><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" /></noscript><!--/fab-fonts-->
+  </head>
+  <body class="min-h-screen antialiased">
+    <!-- ponto de montagem do SPA React -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,7 +1,13 @@
 /*
- * Banco de fotografias da tela inicial (fotos reais, licença comercial).
- * Para trocar, retirar ou acrescentar uma foto, edite apenas esta lista.
- * A tela não precisa mudar. Não usar retratos de mulheres como assunto central.
+ * Banco de fotografias de paisagem, hoje SEM USO.
+ *
+ * A Home passou a usar AppImage com um slot por eixo de reflexão, e as imagens
+ * são geradas no Studio mostrando mulheres como protagonistas. Este arquivo
+ * ficou para trás e pode ser apagado.
+ *
+ * A regra que estava escrita aqui, "não usar retratos de mulheres como assunto
+ * central", contradizia o moodboard da marca e foi o que produziu as paisagens
+ * genéricas no lugar das pessoas. Não reaproveite esta lista sem rever isso.
  */
 export type HomeTheme =
   | 'liberdade'

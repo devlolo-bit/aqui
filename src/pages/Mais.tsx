@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Download, Trash2, Gift, ChevronRight, KeyRound, CalendarDays } from 'lucide-react';
-import { ChangePassword, collection, ApiError } from '@/lib/fab-client';
+import {
+  ShieldCheck,
+  FileText,
+  Download,
+  Trash2,
+  Trophy,
+  ChevronRight,
+  KeyRound,
+  CalendarDays,
+  LogOut,
+} from 'lucide-react';
+import { ChangePassword, useAuth } from '@/lib/fab-client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
 import { ConfirmDialog } from '@/components/ui/alert-dialog';
 import { toast } from '@/components/ui/sonner';
-import { useEffect } from 'react';
 
-type Benefit = { id: string; name: string; description?: string; category?: string };
 
 const CONSENTS = [
   {
@@ -40,25 +46,14 @@ function exportData() {
 }
 
 export default function Mais() {
-  const [benefits, setBenefits] = useState<Benefit[] | null>(null);
-  const [benefitsError, setBenefitsError] = useState<string | null>(null);
   const [consents, setConsents] = useState<Record<string, boolean>>({
     c_data: false,
     c_community: false,
     c_email: true,
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  useEffect(() => {
-    collection<Benefit>('benefit')
-      .list({ sort: 'name', limit: 20 })
-      .then((rows) => setBenefits(rows as Benefit[]))
-      .catch((e) =>
-        setBenefitsError(
-          e instanceof ApiError ? e.message : 'Não foi possível carregar os benefícios. Tente novamente.'
-        )
-      );
-  }, []);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const { logout } = useAuth();
 
   function setConsent(id: string, value: boolean) {
     setConsents((c) => ({ ...c, [id]: value }));
@@ -151,55 +146,56 @@ export default function Mais() {
           </section>
         </div>
 
-        <section aria-labelledby="beneficios" className="min-w-0">
+        {/* Prêmios e Benefícios moram na Tela 7, juntos: os dois pertencem
+          * ao estágio Prosperar. Aqui fica só o atalho. */}
+        <section aria-labelledby="reconhecimento" className="min-w-0">
           <div className="mb-4 flex items-center gap-2">
-            <Gift className="size-5 text-primary-text" aria-hidden />
-            <h2 id="beneficios" className="font-display text-2xl font-semibold tracking-[-0.02em]">
-              Benefícios
+            <Trophy className="size-5 text-primary-text" aria-hidden />
+            <h2 id="reconhecimento" className="font-display text-2xl font-semibold tracking-[-0.02em]">
+              Prêmios e Benefícios
             </h2>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
-            Catálogo informativo. Nenhum resgate ou pagamento é feito aqui.
+            O reconhecimento da sua trajetória e as vantagens da rede, no mesmo lugar.
           </p>
-          {benefits === null && !benefitsError && (
-            <div className="space-y-3">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
+          <Link
+            to="/premios"
+            className="flex min-h-12 items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 transition-colors hover:bg-muted"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-medium">Ver os meus prêmios</p>
+              <p className="truncate text-sm text-muted-foreground">Catálogo informativo. Nenhum resgate é feito aqui.</p>
             </div>
-          )}
-          {benefitsError && (
-            <p role="alert" className="text-sm text-destructive">
-              {benefitsError}
-            </p>
-          )}
-          {benefits && benefits.length === 0 && (
-            <EmptyState
-              icon={Gift}
-              title="Nenhum benefício publicado ainda"
-              description="Os benefícios aparecem aqui assim que forem aprovados pela administração."
-            />
-          )}
-          {benefits && benefits.length > 0 && (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
-              {benefits.map((b) => (
-                <li key={b.id} className="min-w-0">
-                  <Link
-                    to={`/mais?beneficio=${b.id}`}
-                    className="flex min-h-12 items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-muted"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{b.name}</p>
-                      {b.category && <p className="truncate text-sm text-muted-foreground">{b.category}</p>}
-                    </div>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+        </section>
+
+        {/* Encerrar a sessão de verdade.
+         * Antes, o botão Sair da Home só navegava para /login e deixava a
+         * sessão aberta: em aparelho compartilhado, a próxima pessoa entrava
+         * como ela. Num aplicativo sobre autonomia, isso não é detalhe. */}
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">Sessão</h2>
+          <Button variant="outline" onClick={() => setConfirmLogout(true)} className="w-full sm:w-auto">
+            <LogOut className="size-4" aria-hidden />
+            Sair da conta
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Encerra a sessão neste aparelho. Use sempre que estiver num computador ou celular compartilhado.
+          </p>
         </section>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Sair da conta?"
+        description="Você precisará entrar de novo para continuar a sua jornada."
+        onConfirm={() => {
+          setConfirmLogout(false);
+          void logout();
+        }}
+      />
 
       <ConfirmDialog
         open={confirmDelete}

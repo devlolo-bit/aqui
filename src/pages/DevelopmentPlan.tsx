@@ -13,7 +13,7 @@ type Goal = Row & { development_plan?: string; title?: string; done?: boolean; d
 type Action = Row & { development_plan?: string; goal?: string; title?: string; done?: boolean; due_date?: string };
 
 export default function DevelopmentPlan() {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { user, isLoggedIn, isLoading } = useAuth();
   const [plans, setPlans] = useState<Plan[] | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
@@ -21,10 +21,13 @@ export default function DevelopmentPlan() {
   const [newGoal, setNewGoal] = useState<Record<string, string>>({});
   const [newAction, setNewAction] = useState<Record<string, string>>({});
 
+  /* Só development_plan tem owner_id. Metas e ações herdam a dona pelo plano
+   * (owner_via), e a plataforma já aplica esse recorte no servidor. */
   const load = useCallback(async () => {
+    if (!user?.id) return;
     try {
       const [p, g, a] = await Promise.all([
-        collection<Plan>('development_plan').list({ sort: '-created_at', limit: 20 }),
+        collection<Plan>('development_plan').list({ filter: { owner_id: user.id }, sort: '-created_at', limit: 20 }),
         collection<Goal>('goal').list({ limit: 200 }),
         collection<Action>('action').list({ limit: 200 }),
       ]);
@@ -35,7 +38,7 @@ export default function DevelopmentPlan() {
       setPlans([]);
       toast.error(e instanceof ApiError ? e.message : 'Não foi possível carregar o plano. Tente novamente.');
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -49,7 +52,9 @@ export default function DevelopmentPlan() {
   const createPlan = async () => {
     if (!newPlan.trim()) return;
     try {
-      await collection('development_plan').create({ title: newPlan.trim(), priority: 'média' });
+      /* owner_id na criação: sem ele o registro nasce sem dona e some das
+       * telas que filtram, como a Home e o Mapa. */
+      await collection('development_plan').create({ owner_id: user?.id, title: newPlan.trim(), priority: 'média' });
       setNewPlan('');
       await load();
     } catch (e) {

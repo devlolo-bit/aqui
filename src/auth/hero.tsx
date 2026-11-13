@@ -18,7 +18,7 @@ export function HeroImage({ className, priority = false }: { className?: string;
     /*@fab:hero-image*/
     <AppImage
       slot="auth-hero"
-      prompt="Realistic photo of a confident Brazilian woman in her thirties, natural light, warm and empowered expression, plain light background with blue cobalt tile accents, no text in the image."
+      prompt="Realistic editorial portrait of a Brazilian woman in her thirties, elegant and self-possessed, looking straight at the camera with a calm confident expression, tailored blazer, soft natural daylight, clean light background, sophisticated contemporary mood, no text in the image."
       alt=""
       className={className}
       priority={priority}

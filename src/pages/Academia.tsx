@@ -196,9 +196,12 @@ function JournalSection({ isLoggedIn, userId }: { isLoggedIn: boolean; userId?: 
       const rows = await collection<JournalEntry>('journal_entry').list({
         filter: userId ? { owner_id: userId } : undefined,
         sort: '-entry_date',
-        limit: 50,
+        limit: 100,
       });
-      setEntries(rows as JournalEntry[]);
+      /* Os lançamentos de indicadores também moram em journal_entry, por
+       * limitação da plataforma, mas não são registros do diário: ficam na
+       * tela Meus números e sairiam deslocados aqui. */
+      setEntries((rows as JournalEntry[]).filter((r) => String(r.category ?? '') !== 'indicadores'));
     } catch (e) {
       setEntries([]);
       toast.error(e instanceof ApiError ? e.message : 'Não foi possível carregar o diário.');

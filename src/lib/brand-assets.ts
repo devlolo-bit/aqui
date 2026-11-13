@@ -10,14 +10,18 @@ import { AMITSE_LOGO } from './amitse-logo-data';
 export const BRAND = {
   name: 'Âmitse®',
   tagline: 'A Arquitetura da Autonomia da Mulher',
+  /* Os mesmos valores de src/fab-theme.css. Antes havia aqui uma paleta
+   * terracota que não era lida por nenhuma tela e contradizia o tema real. */
   colors: {
-    primary: '#7a3b2e',
-    accent: '#69FF01',
-    base: '#f7f3ee',
+    primary: '#0125B9',
+    accent: '#76FF01',
+    base: '#ffffff',
+    /* O azul do logo, mais saturado que o da interface. */
+    logo: '#0000FF',
   },
   fonts: {
-    display: 'Sora',
-    body: 'Inter',
+    display: 'Inter',
+    body: 'IBM Plex Sans',
   },
   logo: '/brand/amitse-logo.svg',
   /* Logo oficial (PNG com fundo transparente, 3:1). */
@@ -26,9 +30,13 @@ export const BRAND = {
   images: {
     /* Fotografias geradas por IA com estética fotográfica realista. */
     style: 'fotográfica, realista, editorial premium, luz natural, contemporânea',
+    /* O que as imagens DEVEM mostrar.
+     * A lista de restrições abaixo trazia "mulheres como foco central", o que
+     * fazia o gerador evitar justamente o que o moodboard pede. Era a causa das
+     * paisagens genéricas no lugar das pessoas. */
+    required: 'mulheres adultas como protagonistas, em posição e à vontade, diversas em idade e etnia',
     /* Restrições visuais obrigatórias da Âmitse®. */
     banned: [
-      'mulheres como foco central',
       'ilustrações ou pinturas',
       'bebidas alcoólicas',
       'ultraprocessados ou frituras',

@@ -1,76 +1,131 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  TrendingUp,
-  Compass,
-  Heart,
-  Layers,
-  LogOut,
-  Map as MapIcon,
-  MessageCircle,
-  Users,
-} from 'lucide-react';
-import { collection, useAuth, type Row, type InvokeResult } from '@/lib/fab-client';
-import { invokeLLM } from '@/lib/fab-client';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight, TrendingUp, Compass, Heart, Layers, Users } from 'lucide-react';
+import { collection, useAuth } from '@/lib/fab-client';
 import { AppImage } from '@/components/ui/app-image';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { computeScores, DIMENSIONS, stageFor } from '@/lib/mapa';
-import { HOME_PHOTOS, pickHomePhoto, ROTATION_THEMES } from '@/lib/home-photos';
+import {
+  computeScores,
+  DIMENSIONS,
+  latestAssessment,
+  stageFor,
+  STAGE_LABEL,
+  type AnswerRow,
+  type AssessmentRow,
+  type Scores,
+  type StageKey,
+} from '@/lib/mapa';
 import { BRAND } from '@/lib/brand-assets';
-import { pickReflection } from '@/lib/reflections';
+import { pickReflection, type ReflectionAxis } from '@/lib/reflections';
+import { growth, METRIC_CATEGORY, METRICS, type MetricRow } from '@/lib/numeros';
 import { Graph } from '@/components/ui/graph';
 
 const GREETING_BY_HOUR = (h: number) => (h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite');
 
-const STEPS = [
-  { key: 'DIAGNOSTICAR', label: 'Diagnosticar', icon: Compass },
-  { key: 'DESENVOLVER', label: 'Desenvolver', icon: Layers },
-  { key: 'CONSTRUIR', label: 'Construir', icon: TrendingUp },
-  { key: 'CONECTAR', label: 'Conectar', icon: Users },
-  { key: 'PROSPERAR', label: 'Prosperar', icon: Heart },
+const STEPS: { key: StageKey; label: string; icon: typeof Compass }[] = [
+  { key: 'DIAGNOSTICAR', label: STAGE_LABEL.DIAGNOSTICAR, icon: Compass },
+  { key: 'DESENVOLVER', label: STAGE_LABEL.DESENVOLVER, icon: Layers },
+  { key: 'CONSTRUIR', label: STAGE_LABEL.CONSTRUIR, icon: TrendingUp },
+  { key: 'CONECTAR', label: STAGE_LABEL.CONECTAR, icon: Users },
+  { key: 'PROSPERAR', label: STAGE_LABEL.PROSPERAR, icon: Heart },
 ];
 
-const QUESTIONS_PER_DIM = 3;
+type ActionItem = { id: string; title: string; due_date: string | null; done: boolean; done_date?: string | null };
+type ProgressRow = { id: string; last_module?: string | null; created_at?: string | null };
 
-const DIMENSION_COPY: Record<DimensionKey, { label: string; role: string }> = {
-  autolideranca: {
-    label: 'Autoliderança',
-    role: 'Autoliderança sustenta suas escolhas.',
-  },
-  marca: {
-    label: 'Marca Sustentável',
-    role: 'Sua marca transforma trajetória em ativo.',
-  },
-  prosperidade: {
-    label: 'Prosperidade',
-    role: 'Prosperidade nasce de escolhas conscientes.',
-  },
-  poder_escolha: {
-    label: 'Poder de Escolha',
-    role: 'Cada escolha amplia seu poder de decidir.',
-  },
-  desenvolvimento: {
-    label: 'Desenvolvimento Profissional',
-    role: 'Competências abrem novas possibilidades.',
-  },
-  conexoes: {
-    label: 'Conexões',
-    role: 'Redes de apoio sustentam a construção.',
-  },
-};
-
-type ActionItem = { id: string; title: string; due_date: string | null; done: boolean };
-type GoalItem = { id: string; title: string; due_date: string | null; done: boolean };
-type PlanRow = { id: string; title: string; priority: string | null };
+/* A fotografia da Home acompanha a reflexão do dia.
+ *
+ * Como `pickReflection` sorteia a frase a cada entrada, e cada frase tem um
+ * eixo, a imagem roda junto e fala do mesmo assunto — em vez de uma paisagem
+ * genérica que serve para qualquer texto.
+ *
+ * Os seis `slot` estão escritos por extenso, um a um, de propósito: é assim
+ * que o Studio encontra cada espaço para gerar a imagem. Um slot montado por
+ * variável não apareceria na lista de lá.
+ *
+ * As fotos mostram mulheres como protagonistas, adultas e em posição, que é o
+ * que o moodboard pede. Gere cada uma no Studio: Preview → trocar imagem. */
+function HomeHero({ axis }: { axis: ReflectionAxis }) {
+  switch (axis) {
+    case 'financeira':
+      return (
+        <AppImage
+          slot="home-hero-financeira"
+          prompt="Editorial photo of a Brazilian woman in her forties at a bright contemporary desk, reviewing figures on paper with calm concentration, elegant blazer, natural daylight, shallow depth of field, no text in the image."
+          alt="Mulher revendo os próprios números"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+    case 'profissional':
+      return (
+        <AppImage
+          slot="home-hero-profissional"
+          prompt="Editorial photo of a confident Brazilian woman presenting her work to two colleagues in a bright modern studio, mid-gesture, warm natural light, sophisticated contemporary interior, no text in the image."
+          alt="Mulher apresentando o próprio trabalho"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+    case 'intelectual':
+      return (
+        <AppImage
+          slot="home-hero-intelectual"
+          prompt="Editorial photo of a Brazilian woman reading at a window seat with books and a notebook beside her, absorbed and composed, soft natural light, refined minimal interior, no text in the image."
+          alt="Mulher estudando"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+    case 'social':
+      return (
+        <AppImage
+          slot="home-hero-social"
+          prompt="Editorial photo of four Brazilian women of different ages and ethnicities talking and laughing around a table in an upscale restaurant, warm evening light, genuine connection, sophisticated setting, no text in the image."
+          alt="Mulheres em conversa"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+    case 'emocional':
+      return (
+        <AppImage src="https://cdn.fabapp.app/c968a120-f511-4f69-803b-8d9ddf3745b0/3a153e1a-86b2-4529-be12-37f0b2793189/553a4840-6fbb-48d4-9a06-b5c024d1ce5a/Gemini_Generated_Image_445vu5445vu5445v.png"
+          slot="home-hero-emocional"
+          prompt="Editorial portrait of a Brazilian woman in her thirties standing by a large window, self-possessed and serene, looking ahead, soft daylight, contemporary architecture in the background, no text in the image."
+          alt="Mulher em um momento de serenidade"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+    case 'pessoal':
+    default:
+      return (
+        <AppImage
+          slot="home-hero-pessoal"
+          prompt="Editorial photo of a Brazilian woman walking with purpose through contemporary architecture, elegant and unhurried, natural daylight, clean sophisticated lines, no text in the image."
+          alt="Mulher seguindo o próprio caminho"
+          className="h-[380px] w-full object-cover sm:h-[460px]"
+          width={1400}
+          height={760}
+          priority
+        />
+      );
+  }
+}
 
 type AssetCount = { count: number; sources: string[] };
-
-type Scores = ReturnType<typeof computeScores>;
-
-type DimensionKey = 'autolideranca' | 'marca' | 'prosperidade' | 'poder_escolha' | 'desenvolvimento' | 'conexoes';
 
 function formatDateShort(iso: string): string {
   const [y, m] = iso.split('-');
@@ -116,12 +171,13 @@ function computeAssetCounts(
 
 function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['user']> }) {
   const nav = useNavigate();
-  const [plans, setPlans] = useState<PlanRow[] | null>(null);
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [doneDates, setDoneDates] = useState<Record<string, string | null>>({});
   const [modules, setModules] = useState<{ id: string; date: string | null }[]>([]);
   const [assets, setAssets] = useState<{ id: string; source: string }[]>([]);
-  const [assess, setAssess] = useState<Row[]>([]);
+  const [answers, setAnswers] = useState<AnswerRow[]>([]);
+  const [metrics, setMetrics] = useState<MetricRow[]>([]);
+  const [hasAssessment, setHasAssessment] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const firstName = (user.name ?? '').trim().split(' ')[0] || 'integrante';
@@ -132,29 +188,52 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
     async function load() {
       setLoading(true);
       try {
-        const [planRows, actionRows, assessRows, brandRows] = await Promise.all([
-          collection<PlanRow>('development_plan').list({ filter: { owner_id: user.id } }),
-          collection<ActionItem>('action').list({ filter: { done: true } }),
-          collection('assessment').list({ filter: { owner_id: user.id } }),
-          collection('brand_profile').list({ filter: { owner_id: user.id } }),
+        /* `action` não tem campo owner_id: o schema a vincula à dona através do
+         * plano de desenvolvimento (owner_via), e a plataforma já filtra por
+         * isso no servidor. Filtrar aqui por owner_id não devolveria nada. */
+        const [actionRows, assessRows, brandRows, progressRows, metricRows] = await Promise.all([
+          collection<ActionItem>('action').list({ limit: 200 }),
+          collection<AssessmentRow>('assessment').list({ filter: { owner_id: user.id } }),
+          collection<{ id: string }>('brand_profile').list({ filter: { owner_id: user.id } }),
+          collection<ProgressRow>('track_progress').list({ filter: { owner_id: user.id }, limit: 200 }),
+          collection<MetricRow>('journal_entry').list({
+            filter: { owner_id: user.id, category: METRIC_CATEGORY },
+            limit: 100,
+          }),
         ]);
         if (!alive) return;
-        setPlans(planRows);
+
         setActions(actionRows);
-        setAssess(assessRows);
-        setAssets(brandRows.map((b: Row) => ({ id: String(b.id), source: 'brand' })));
-        // Cada ação concluída é datada a partir do registro, sem duplicar.
+        setAssets(brandRows.map((b) => ({ id: String(b.id), source: 'brand' })));
+        setModules(progressRows.map((p) => ({ id: String(p.id), date: p.created_at ?? null })));
+        setMetrics(metricRows);
+
+        /* Cada ação concluída é datada a partir do registro, sem duplicar. */
         const dates: Record<string, string | null> = {};
-        for (const a of actionRows) {
-          dates[a.id] = (a as unknown as { done_date?: string | null }).done_date ?? null;
-        }
+        for (const a of actionRows) dates[a.id] = a.done_date ?? null;
         setDoneDates(dates);
+
+        /* A pontuação vem das respostas do diagnóstico mais recente, não da
+         * lista de diagnósticos. */
+        const current = latestAssessment(assessRows);
+        setHasAssessment(!!current);
+        if (current) {
+          const answerRows = await collection<AnswerRow>('assessment_answer').list({
+            filter: { assessment: current.id },
+            limit: 200,
+          });
+          if (alive) setAnswers(answerRows);
+        } else if (alive) {
+          setAnswers([]);
+        }
       } catch {
         if (alive) {
-          setPlans([]);
           setActions([]);
-          setAssess([]);
           setAssets([]);
+          setModules([]);
+          setMetrics([]);
+          setAnswers([]);
+          setHasAssessment(false);
         }
       } finally {
         if (alive) setLoading(false);
@@ -167,9 +246,9 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
   }, [user.id]);
 
   const scores: Scores | null = useMemo(() => {
-    if (!assess || assess.length === 0) return null;
-    return computeScores(assess);
-  }, [assess]);
+    const s = computeScores(answers);
+    return s.answered > 0 ? s : null;
+  }, [answers]);
 
   const stage = useMemo(() => (scores ? stageFor(scores.overall) : null), [scores]);
 
@@ -179,6 +258,9 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
     return idx >= 0 ? idx : 0;
   }, [stage]);
 
+  /* A consulta traz todas as ações da usuária, concluídas e pendentes, para que
+   * esta busca encontre de fato a próxima. Antes a consulta filtrava done:true,
+   * e procurar uma pendente dentro dela nunca devolvia nada. */
   const nextAction = useMemo(() => actions.find((a) => !a.done) ?? null, [actions]);
 
   const assetCounts = useMemo(
@@ -202,37 +284,13 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-10">
-      {/* Cabeçalho */}
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 pt-6 sm:px-6">
-        <div className="flex shrink-0 items-center gap-3">
-          <img
-            src={BRAND.logoSrc}
-            alt="Âmitse® — A Arquiteta da Autonomia da Mulher"
-            width={720}
-            height={148}
-            className="block h-auto w-[170px] shrink-0 sm:w-[210px] lg:w-[240px]"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/mais" aria-label="Mais opções">
-              <span className="sr-only">Mais</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary-text text-xs font-semibold">
-                {firstName.slice(0, 2).toUpperCase()}
-              </span>
-            </Link>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => nav('/login')} aria-label="Sair">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-
+      {/* Sem cabeçalho próprio: o AppShell do Layout já traz logo e navegação.
+       * Antes os dois apareciam empilhados em /jornada. */}
       <main className="mx-auto max-w-5xl px-4 sm:px-6">
-        {/* Saudação */}
+        {/* Saudação. A vírgula vai depois do nome, como pede a página 82 do brandbook. */}
         <div className="mt-8">
-          <p className="text-sm text-muted-foreground">{greeting},</p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{firstName}</h1>
+          <p className="text-sm text-muted-foreground">{greeting}</p>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{firstName},</h1>
         </div>
 
         {/* Reflexão rotativa */}
@@ -249,13 +307,7 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
         <section className="mt-6 grid gap-5 lg:grid-cols-[7fr_3fr]">
           {/* Fotografia ampliada */}
           <div className="relative overflow-hidden rounded-2xl bg-foreground">
-            <AppImage
-              slot="home-hero"
-              prompt="editorial photo of a woman architect reviewing plans in warm natural light, autonomy and decision, sophisticated contemporary scene"
-              alt="Mulher em decisão sobre o próprio caminho"
-              className="h-[380px] w-full object-cover sm:h-[460px]"
-              priority
-            />
+            <HomeHero axis={axis.key} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
             <div className="absolute bottom-0 left-0 right-0 z-10 p-5">
               <h2 className="text-xl font-semibold text-white">
@@ -278,7 +330,10 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
               <p className="mt-2 text-5xl font-bold tabular-nums text-primary">
                 {scores ? `${Math.round(scores.overall)}%` : '—'}
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">{stage ?? 'Ainda não iniciado'}</p>
+              {/* O rótulo legível, nunca a chave interna em caixa alta. */}
+              <p className="mt-1 text-sm text-muted-foreground">
+                {stage ? STAGE_LABEL[stage] : 'Ainda não iniciado'}
+              </p>
 
               <ol className="mt-4 space-y-2">
                 {STEPS.map((s, i) => {
@@ -316,6 +371,8 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
             {/* Próximo passo */}
             <div className="rounded-2xl border border-border bg-primary/5 p-4">
               <p className="text-xs font-medium tracking-widest text-primary-text uppercase">Próximo passo</p>
+              {/* Três estados reais, em vez de um texto fixo que afirmava à
+               * recém-chegada que ela havia concluído o diagnóstico. */}
               {nextAction ? (
                 <>
                   <p className="mt-1 text-sm text-foreground">{nextAction.title}</p>
@@ -323,18 +380,71 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
                     Avançar no Mapa
                   </Button>
                 </>
+              ) : !hasAssessment ? (
+                <>
+                  <p className="mt-1 text-sm text-foreground">
+                    Comece pelo Diagnóstico da Autonomia. São cerca de 15 minutos, e é ele que monta o seu Mapa.
+                  </p>
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => nav('/diagnostico')}>
+                    Fazer o Diagnóstico
+                  </Button>
+                </>
+              ) : !scores ? (
+                <>
+                  <p className="mt-1 text-sm text-foreground">
+                    Seu diagnóstico está em andamento. Retome de onde parou para liberar o seu Mapa.
+                  </p>
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => nav('/diagnostico')}>
+                    Retomar Diagnóstico
+                  </Button>
+                </>
               ) : (
                 <>
                   <p className="mt-1 text-sm text-foreground">
-                    Você concluiu o Diagnóstico. Agora é hora de iniciar sua jornada de Desenvolvimento.
+                    Seu Mapa está pronto. Escolha a próxima prioridade para avançar.
                   </p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => nav('/plano')}>
-                    Continuar Jornada
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => nav('/mapa')}>
+                    Abrir o Mapa
                   </Button>
                 </>
               )}
             </div>
           </div>
+        </section>
+
+        {/* Os números do negócio, que a página 51 do brandbook pede na Home. */}
+        <section className="mt-10">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-semibold tracking-tight">Os seus números</h2>
+            <Button variant="link" className="h-auto p-0" onClick={() => nav('/numeros')}>
+              {metrics.length === 0 ? 'Lançar o primeiro mês' : 'Abrir Meus números'}
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+          {metrics.length === 0 ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Uma marca sustentável se mede. Lance faturamento, clientes e alcance uma vez por mês, e a curva do seu
+              crescimento aparece aqui.
+            </p>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {METRICS.map((m) => {
+                const g = growth(metrics, m.key);
+                return (
+                  <div key={m.key} className="rounded-xl border border-border bg-card p-4">
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{m.label}</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums">{g ? m.format(g.last) : '—'}</p>
+                    {g?.delta !== null && g?.delta !== undefined && (
+                      <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+                        {g.delta > 0 ? '+' : ''}
+                        {g.delta}% no mês
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Como estou evoluindo */}
@@ -354,19 +464,22 @@ function MemberHome({ user }: { user: NonNullable<ReturnType<typeof useAuth>['us
         {/* O que já construí */}
         <section className="mt-10">
           <h2 className="text-xl font-semibold tracking-tight">O que já construí</h2>
+          {/* As dimensões vêm de lib/mapa.ts, a mesma fonte que pontua o
+           * diagnóstico. Antes esta tela declarava seis chaves próprias que não
+           * existiam em lugar nenhum, e por isso nenhum card mostrava número. */}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {Object.entries(DIMENSION_COPY).map(([key, { label, role }]) => {
-              const hasData = scores && (scores.byDimension[key] ?? 0) > 0;
+            {DIMENSIONS.map((d) => {
+              const value = scores?.byDimension[d.key] ?? 0;
               return (
-                <div key={key} className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-sm font-semibold text-foreground">{label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{role}</p>
-                  {hasData ? (
-                    <p className="mt-2 text-lg font-bold tabular-nums text-primary">
-                      {Math.round(scores!.byDimension[key] ?? 0)}%
-                    </p>
+                <div key={d.key} className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-sm font-semibold text-foreground">{d.label}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{d.role}</p>
+                  {value > 0 ? (
+                    <p className="mt-2 text-lg font-bold tabular-nums text-primary">{value}%</p>
                   ) : (
-                    <p className="mt-2 text-xs italic text-muted-foreground">Em desenvolvimento</p>
+                    <p className="mt-2 text-xs italic text-muted-foreground">
+                      {hasAssessment ? 'Sem resposta ainda' : 'O Diagnóstico revela'}
+                    </p>
                   )}
                 </div>
               );
@@ -420,6 +533,7 @@ function VisitorHome() {
 
 export default function Home() {
   const { user, isLoggedIn, isLoading } = useAuth();
+  const location = useLocation();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -432,6 +546,11 @@ export default function Home() {
   }
   if (!isLoggedIn || !user) {
     return <VisitorHome />;
+  }
+  /* Membro na raiz vai para /inicio, que é onde o Layout monta a navegação.
+   * Sem isso, a Home da membro apareceria sem menu nenhum. */
+  if (location.pathname === '/') {
+    return <Navigate to="/inicio" replace />;
   }
   return <MemberHome user={user} />;
 }
